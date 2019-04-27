@@ -50,6 +50,7 @@ def save_i_keyframes(video_fn, outputDir):
         print ('No I-frames in '+video_fn)
 
 def main():
+    os.chdir('..')
     data = getCSV('data/ml-youtube.csv')
     for row in data:
         youtubeURL = 'https://youtu.be/%s' % data[0]
