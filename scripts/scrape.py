@@ -2,6 +2,7 @@ import csv
 import cv2
 from pytube import YouTube
 import os
+import subprocess
 
 def getCSV(filename):
     with open(filename) as csvfile:
@@ -52,11 +53,15 @@ def save_i_keyframes(video_fn, outputDir):
 def main():
     os.chdir('..')
     data = getCSV('data/ml-youtube.csv')
+    numVideos = len(data)
+    count = 1
     for row in data:
+        print('on video %d of %d' % (count, numVideos))
         youtubeURL = 'https://youtu.be/%s' % row[0]
         videoName = row[2].replace(' ', '')
         videoFileLocation = downloadMP4(videoName, youtubeURL)
         newDirName = 'data/%s' % videoName
         save_i_keyframes(videoFileLocation, newDirName)
+        count += 1
 
 main()
