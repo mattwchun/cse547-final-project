@@ -59,9 +59,13 @@ def main():
         print('on video %d of %d' % (count, numVideos))
         youtubeURL = 'https://youtu.be/%s' % row[0]
         videoName = row[2].replace(' ', '')
-        videoFileLocation = downloadMP4(videoName, youtubeURL)
-        newDirName = 'data/%s' % videoName
-        save_i_keyframes(videoFileLocation, newDirName)
+        try:
+            videoFileLocation = downloadMP4(videoName, youtubeURL)
+            newDirName = 'data/%s' % videoName
+            save_i_keyframes(videoFileLocation, newDirName)
+            os.remove(videoFileLocation) # save space
+        except:
+            print('Unable to get keyframes for video: %s' % videoName)
         count += 1
 
 main()
