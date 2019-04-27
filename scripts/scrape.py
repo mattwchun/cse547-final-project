@@ -26,7 +26,7 @@ def downloadMP4(videoName, videoURL):
     os.rename(fileLocation, newFileLocation)
     return newFileLocation
 
-
+# following 2 functions referenced from https://stackoverflow.com/questions/42798634/extracting-keyframes-python-opencv
 def get_frame_types(video_fn):
     command = 'ffprobe -v error -show_entries frame=pict_type -of default=noprint_wrappers=1'.split()
     out = subprocess.check_output(command + [video_fn]).decode()
