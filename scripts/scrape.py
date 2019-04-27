@@ -53,8 +53,8 @@ def main():
     os.chdir('..')
     data = getCSV('data/ml-youtube.csv')
     for row in data:
-        youtubeURL = 'https://youtu.be/%s' % data[0]
-        videoName = data[2].replace(' ', '')
+        youtubeURL = 'https://youtu.be/%s' % row[0]
+        videoName = row[2].replace(' ', '')
         videoFileLocation = downloadMP4(videoName, youtubeURL)
         newDirName = 'data/%s' % videoName
         save_i_keyframes(videoFileLocation, newDirName)
