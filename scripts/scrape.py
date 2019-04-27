@@ -13,7 +13,7 @@ def downloadMP4(videoName, videoURL):
     yt = YouTube(videoURL)
 
     # make dir
-    newDirName = '../data/%s' % videoName
+    newDirName = 'data/%s' % videoName
     os.mkdir(newDirName)
 
     stream = yt.streams.get_by_itag('18')
