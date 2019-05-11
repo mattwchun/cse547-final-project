@@ -36,9 +36,9 @@ def generateSample(dir, k):
 
 # dir = movie1
 # outputDir = output
-def moveFolder(dir, outputDir, k):
+def moveFolder(dir, currDataFolder, outputDir, k):
     subset = generateSample(dir, k)
-    outDir = dir.replace("data", outputDir)
+    outDir = dir.replace(currDataFolder, outputDir)
     copytree(dir, outDir)
     return (outDir, subset)
 
@@ -55,7 +55,7 @@ def main():
 
     dirs = glob.glob("%s/*" % currDataFolder)
     for dir in dirs:
-        outDir, sample = moveFolder(dir, outputFolder, k)
+        outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
         if len(sample) > 0:
             removeNonSamples(outDir, sample)
 
