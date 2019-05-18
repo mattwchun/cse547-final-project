@@ -11,6 +11,7 @@ import sys
 import glob
 from shutil import copyfile, copytree
 import random
+from joblib import Parallel, delayed
 
 # 1) for all folders in data folder
 # 1) move folder to output folder
@@ -30,8 +31,9 @@ def generateSample(dir, k):
 
     random.shuffle(files)
 
-    subset = random[:k]
-    subset.sort(key=lambda x: os.path.getmtime(x))
+    subset = files[:k]
+    assert len(subset) == k
+    # subset.sort(key=lambda x: os.path.getmtime(x))
     return subset
 
 # dir = movie1
@@ -39,7 +41,9 @@ def generateSample(dir, k):
 def moveFolder(dir, currDataFolder, outputDir, k):
     subset = generateSample(dir, k)
     outDir = dir.replace(currDataFolder, outputDir)
-    copytree(dir, outDir)
+
+    if len(subset) == k:
+        copytree(dir, outDir)
     return (outDir, subset)
 
 def removeNonSamples(dir, sample):
@@ -48,15 +52,41 @@ def removeNonSamples(dir, sample):
         if file not in sample:
             os.remove(file)
 
+def run(idx, dir, numMovies, currDataFolder, outputFolder, k):
+    if idx % 500 == 0:
+        print(idx, numMovies)
+
+    if os.path.isfile(dir):
+        return
+
+    outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
+    if len(sample) == k:
+        removeNonSamples(outDir, sample)
+
+
 def main():
     currDataFolder = sys.argv[1]
     outputFolder = sys.argv[2]
-    k = sys.argv[3]
+    k = int(sys.argv[3])
 
     dirs = glob.glob("%s/*" % currDataFolder)
-    for dir in dirs:
-        outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
-        if len(sample) > 0:
-            removeNonSamples(outDir, sample)
+    numMovies = len(dirs)
+    # numOutputMovies = 0
+
+    Parallel(n_jobs=8)(delayed(run)(idx, dir, numMovies, currDataFolder, outputFolder, k) for idx, dir in enumerate(dirs))
+
+    # for idx, dir in enumerate(dirs):
+    #     if idx % 500 == 0:
+    #         print(idx, numMovies)
+
+    #     if os.path.isfile(dir):
+    #         continue
+
+    #     outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
+    #     if len(sample) > 0:
+    #         numOutputMovies += 1
+    #         removeNonSamples(outDir, sample)
+
+    # print("numOutputMovies:", numOutputMovies)
 
 main()
