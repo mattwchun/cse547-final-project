@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
+import PIL
 
 
 class Img2Vec():
@@ -25,7 +26,7 @@ class Img2Vec():
 
         self.model.eval()
 
-        self.crop = transforms.CenterCrop(224),
+        self.crop = transforms.CenterCrop(224)
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                               std=[0.229, 0.224, 0.225])
         self.to_tensor = transforms.ToTensor()
@@ -39,7 +40,7 @@ class Img2Vec():
 
         width, height = img.size
         hpercent = (224 / float(height))
-        hsize = int((float(width) * float(hpercent)))
+        wsize = int((float(width) * float(hpercent)))
         img = img.resize((wsize, 224), PIL.Image.ANTIALIAS)
         image = self.normalize(self.to_tensor(self.crop(img))).unsqueeze(0).to(self.device)
 
