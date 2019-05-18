@@ -27,7 +27,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 sequence_length = 10
-input_size = 512
+input_size = 2048
 hidden_size = 32#64#1024
 num_layers = 2
 batch_size = sequence_length # set to the number of images of a seqence # 36
@@ -107,7 +107,7 @@ class AutoEncoderRNN(nn.Module):
         encoded_x = self.encoder(x).expand(-1, sequence_length, -1)
         decoded_x = self.decoder(encoded_x)
 
-        return decoded_x
+        return (decoded_x, encoded_x[:, -1, :])
 
 
 # ### Data preparation
@@ -171,9 +171,6 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['all']}
 
 # ### Train the model
 
-# In[ ]:
-
-
 def train_model(model, criterion, optimizer, num_epoches=25):
     #losses = {'train': [], 'val': []}
     losses = {'all': []}
@@ -197,8 +194,10 @@ def train_model(model, criterion, optimizer, num_epoches=25):
 
             running_loss = 0.0
 
+            allEmbeddings = np.array([])
+
             # sequence input
-            for i in range(0, dataset_sizes['all'] - batch_size, batch_size):
+            for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
                 imgs = []
                 for j in range(i, i + batch_size):
                     path = os.path.join('{}{}.jpg'.format('../data/all/data/v_i_frame_', j))
@@ -214,7 +213,12 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase != 'val'):
-                    outputs = model(inputs)
+                    outputs, embeddings = model(inputs)
+                    embeddingAsList = embeddings[0].detach().numpy()
+                    if i == 0:
+                        allEmbeddings = embeddingAsList
+                    else:
+                        allEmbeddings = np.vstack((allEmbeddings, embeddingAsList))
 
                     inv_idx = torch.arange(sequence_length - 1, -1, -1).long()
                     loss = criterion(outputs, inputs[:, inv_idx, :])
@@ -235,7 +239,11 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
 
-        #print()
+            if epoch == num_epoches - 1:
+                # output only the last
+                np.savetxt("embeddings.csv", allEmbeddings, delimiter=",")
+
+
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -255,9 +263,6 @@ torch.save(model.state_dict(), './lstm_autoencoder_model.pt')
 
 
 # ### Plot training/val curves
-
-# In[10]:
-
 
 plt.figure(figsize=(20, 10))
 
