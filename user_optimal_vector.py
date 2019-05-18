@@ -2,6 +2,8 @@ import sys
 import csv
 import sys
 import csv
+import numpy as np
+from datetime import datetime
 data_file = sys.argv[1]
 user_movies = {} # maps the user id to the np array that contains the movie id, rating and timestamp
 with open(data_file) as csv_file:
@@ -21,10 +23,11 @@ print("len:", len(user_movies))
 for id in user_movies:
     m = user_movies[id]
     m.sort(key=lambda x: x[2], reverse=True)
-    m=np.array(m)
+    m = np.array(m)
     user_movies[id] = m
-
+# np.save('user_movies.npy', user_movies) 
 A = np.array([[1, 2, 3]]) # A is the feature vectors for a given movie. the index of the element is the movie id
+
 k = 2 # configurable k
 user_optimal = {} # map the user id to the optimal movie vector
 for user_id in user_movies:
