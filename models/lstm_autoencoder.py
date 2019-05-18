@@ -7,7 +7,7 @@
 import torch
 import torch.nn as nn
 from torchvision import transforms, datasets
-from img_to_vec import Img2Vec
+from resnet_feature_extracter import Img2Vec
 import numpy as np
 import os
 import time
@@ -27,7 +27,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 sequence_length = 10
-input_size = 2048
+input_size = 512
 hidden_size = 32#64#1024
 num_layers = 2
 batch_size = sequence_length # set to the number of images of a seqence # 36
@@ -149,11 +149,11 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 # data_dir = './pregnant'
 data_dir = '../data'
 
-# data_transforms = transforms.Compose([
-#     transforms.Resize((224, 224)),
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-data_transforms = transforms.ToTensor()
+data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
+# data_transforms = transforms.ToTensor()
 
 # image_datasets = {x: ImageFolderWithPaths(os.path.join(data_dir, x),
 #                                           transform=data_transforms) for x in ['data']}
@@ -202,13 +202,12 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                 imgs = []
                 for j in range(i, i + batch_size):
                     path = os.path.join('{}{}.jpg'.format('../data/all/data/v_i_frame_', j))
+                    # img = Image.open(path)
                     img = data_transforms(Image.open(path))
-#                     img = extractor.get_vec(Image.open(path))
                     imgs.append(img)
                 inputs = torch.stack(imgs)
             #for inputs, _, paths in data_loaders[phase]:
                 inputs = extractor.get_vec(inputs)
-                print(inputs)
 
                 inputs = inputs.reshape(-1, sequence_length, input_size).to(device)
 

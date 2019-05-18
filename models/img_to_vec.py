@@ -37,7 +37,6 @@ class Img2Vec():
         :param tensor: If True, get_vec will return a FloatTensor instead of Numpy array
         :returns: Numpy ndarray
         """
-
         width, height = img.size
         hpercent = (224 / float(height))
         wsize = int((float(width) * float(hpercent)))
