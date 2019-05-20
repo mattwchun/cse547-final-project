@@ -7,7 +7,7 @@
 import torch
 import torch.nn as nn
 from torchvision import transforms, datasets
-from img_to_vec import Img2Vec
+from resnet_feature_extracter import Img2Vec
 import numpy as np
 import os
 import time
@@ -107,7 +107,7 @@ class AutoEncoderRNN(nn.Module):
         encoded_x = self.encoder(x).expand(-1, sequence_length, -1)
         decoded_x = self.decoder(encoded_x)
 
-        return decoded_x
+        return (decoded_x, encoded_x[:, -1, :])
 
 
 # ### Data preparation
@@ -149,11 +149,11 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 # data_dir = './pregnant'
 data_dir = '../data'
 
-# data_transforms = transforms.Compose([
-#     transforms.Resize((224, 224)),
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-data_transforms = transforms.ToTensor()
+data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
+# data_transforms = transforms.ToTensor()
 
 # image_datasets = {x: ImageFolderWithPaths(os.path.join(data_dir, x),
 #                                           transform=data_transforms) for x in ['data']}
@@ -170,9 +170,6 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['all']}
 
 
 # ### Train the model
-
-# In[ ]:
-
 
 def train_model(model, criterion, optimizer, num_epoches=25):
     #losses = {'train': [], 'val': []}
@@ -197,25 +194,31 @@ def train_model(model, criterion, optimizer, num_epoches=25):
 
             running_loss = 0.0
 
+            allEmbeddings = np.array([])
+
             # sequence input
-            for i in range(0, dataset_sizes['all'] - batch_size, batch_size):
+            for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
                 imgs = []
                 for j in range(i, i + batch_size):
                     path = os.path.join('{}{}.jpg'.format('../data/all/data/v_i_frame_', j))
+                    # img = Image.open(path)
                     img = data_transforms(Image.open(path))
-#                     img = extractor.get_vec(Image.open(path))
                     imgs.append(img)
                 inputs = torch.stack(imgs)
             #for inputs, _, paths in data_loaders[phase]:
                 inputs = extractor.get_vec(inputs)
-                print(inputs)
 
                 inputs = inputs.reshape(-1, sequence_length, input_size).to(device)
 
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase != 'val'):
-                    outputs = model(inputs)
+                    outputs, embeddings = model(inputs)
+                    embeddingAsList = embeddings[0].detach().numpy()
+                    if i == 0:
+                        allEmbeddings = embeddingAsList
+                    else:
+                        allEmbeddings = np.vstack((allEmbeddings, embeddingAsList))
 
                     inv_idx = torch.arange(sequence_length - 1, -1, -1).long()
                     loss = criterion(outputs, inputs[:, inv_idx, :])
@@ -236,7 +239,11 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
 
-        #print()
+            if epoch == num_epoches - 1:
+                # output only the last
+                np.savetxt("embeddings.csv", allEmbeddings, delimiter=",")
+
+
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -256,9 +263,6 @@ torch.save(model.state_dict(), './lstm_autoencoder_model.pt')
 
 
 # ### Plot training/val curves
-
-# In[10]:
-
 
 plt.figure(figsize=(20, 10))
 
