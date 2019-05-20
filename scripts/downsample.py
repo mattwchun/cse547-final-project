@@ -9,19 +9,27 @@
 import os
 import sys
 import glob
-from shutil import copyfile, copytree
+from shutil import copyfile, copytree, copy
 import random
 from joblib import Parallel, delayed
-
+from PIL import Image
 # 1) for all folders in data folder
 # 1) move folder to output folder
 # 2) generate sample
 # 3) delete non sample files
-
+frame_index = 0
 # returns sorted by increasing timestamp of subset of folder
 def generateSample(dir, k):
     files = glob.glob("%s/*" % dir)
-    if k >= len(files):
+    for f in files:
+        try:
+            img = Image.open(f) # open the image file
+            img.verify() # verify that it is, in fact an image
+        except (IOError, SyntaxError) as e:
+            print('Bad file:', f) # print out the names of corrupt files
+            os.remove(f)
+    files = glob.glob("%s/*" % dir)
+    if k > len(files):
         # ignore
         return []
 
@@ -33,18 +41,18 @@ def generateSample(dir, k):
 
     subset = files[:k]
     assert len(subset) == k
-    # subset.sort(key=lambda x: os.path.getmtime(x))
     return subset
 
-# dir = movie1
-# outputDir = output
 def moveFolder(dir, currDataFolder, outputDir, k):
+    global frame_index
     subset = generateSample(dir, k)
-    outDir = dir.replace(currDataFolder, outputDir)
-
     if len(subset) == k:
-        copytree(dir, outDir)
-    return (outDir, subset)
+        for f in subset:
+            print("copying:", f, "  index:", frame_index)
+            # TODO: just need to change "frame_" to movie name	
+            copy(f, outputDir + "frame_" + str(frame_index))
+            frame_index += 1
+    return (outputDir, subset)
 
 def removeNonSamples(dir, sample):
     files = glob.glob("%s/*" % dir)
@@ -53,15 +61,17 @@ def removeNonSamples(dir, sample):
             os.remove(file)
 
 def run(idx, dir, numMovies, currDataFolder, outputFolder, k):
+    print("running")
     if idx % 500 == 0:
         print(idx, numMovies)
 
-    if os.path.isfile(dir):
-        return
+    if os.path.isfile(dir): 
+    	print("returning.", str(dir))
+    	return
 
     outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
-    if len(sample) == k:
-        removeNonSamples(outDir, sample)
+    #if len(sample) == k:
+    #   removeNonSamples(outDir, sample)
 
 
 def main():
@@ -73,8 +83,9 @@ def main():
     numMovies = len(dirs)
     # numOutputMovies = 0
 
-    Parallel(n_jobs=8)(delayed(run)(idx, dir, numMovies, currDataFolder, outputFolder, k) for idx, dir in enumerate(dirs))
-
+    #Parallel(n_jobs=8)(delayed(run)(idx, dir, numMovies, currDataFolder, outputFolder, k) for idx, dir in enumerate(dirs))
+    for idx, dir in enumerate(dirs):
+        run(idx, dir, numMovies, currDataFolder, outputFolder, k)
     # for idx, dir in enumerate(dirs):
     #     if idx % 500 == 0:
     #         print(idx, numMovies)
