@@ -13,6 +13,7 @@ from shutil import copyfile, copytree, copy
 import random
 from joblib import Parallel, delayed
 from PIL import Image
+import csv
 # 1) for all folders in data folder
 # 1) move folder to output folder
 # 2) generate sample
@@ -46,32 +47,29 @@ def generateSample(dir, k):
 def moveFolder(dir, currDataFolder, outputDir, k):
     global frame_index
     subset = generateSample(dir, k)
+    isCopied = False
     if len(subset) == k:
         for f in subset:
             print("copying:", f, "  index:", frame_index)
-            # TODO: just need to change "frame_" to movie name	
-            copy(f, outputDir + "frame_" + str(frame_index))
+            # TODO: just need to change "frame_" to movie name
+            copy(f, outputDir + "/" + str(frame_index) + ".jpg")
             frame_index += 1
-    return (outputDir, subset)
-
-def removeNonSamples(dir, sample):
-    files = glob.glob("%s/*" % dir)
-    for file in files:
-        if file not in sample:
-            os.remove(file)
+        isCopied = True
+    return (outputDir, subset, isCopied)
 
 def run(idx, dir, numMovies, currDataFolder, outputFolder, k):
     print("running")
     if idx % 500 == 0:
         print(idx, numMovies)
 
-    if os.path.isfile(dir): 
+    if os.path.isfile(dir):
     	print("returning.", str(dir))
     	return
 
-    outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
-    #if len(sample) == k:
-    #   removeNonSamples(outDir, sample)
+    outDir, sample, isCopied = moveFolder(dir, currDataFolder, outputFolder, k)
+
+    return isCopied
+
 
 
 def main():
@@ -81,23 +79,21 @@ def main():
 
     dirs = glob.glob("%s/*" % currDataFolder)
     numMovies = len(dirs)
-    # numOutputMovies = 0
 
     #Parallel(n_jobs=8)(delayed(run)(idx, dir, numMovies, currDataFolder, outputFolder, k) for idx, dir in enumerate(dirs))
+    movieOrder = []
     for idx, dir in enumerate(dirs):
-        run(idx, dir, numMovies, currDataFolder, outputFolder, k)
-    # for idx, dir in enumerate(dirs):
-    #     if idx % 500 == 0:
-    #         print(idx, numMovies)
+        isCopied = run(idx, dir, numMovies, currDataFolder, outputFolder, k)
+        if isCopied:
+            movieName = os.path.basename(dir)
+            movieOrder.append(movieName)
 
-    #     if os.path.isfile(dir):
-    #         continue
+    # output order of movies
+    print(movieOrder)
+    with open('movieOrder.csv', 'w') as f:
+        wtr = csv.writer(f)
+        for x in movieOrder:
+            wtr.writerow([x])
 
-    #     outDir, sample = moveFolder(dir, currDataFolder, outputFolder, k)
-    #     if len(sample) > 0:
-    #         numOutputMovies += 1
-    #         removeNonSamples(outDir, sample)
-
-    # print("numOutputMovies:", numOutputMovies)
 
 main()
