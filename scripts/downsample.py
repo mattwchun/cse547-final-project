@@ -41,7 +41,9 @@ def generateSample(dir, k):
     random.shuffle(files)
 
     subset = files[:k]
-    assert len(subset) == k
+    if len(subset) != k:
+        return []
+
     return subset
 
 def moveFolder(dir, currDataFolder, outputDir, k):
@@ -50,7 +52,7 @@ def moveFolder(dir, currDataFolder, outputDir, k):
     isCopied = False
     if len(subset) == k:
         for f in subset:
-            print("copying:", f, "  index:", frame_index)
+            # print("copying:", f, "  index:", frame_index)
             # TODO: just need to change "frame_" to movie name
             copy(f, outputDir + "/" + str(frame_index) + ".jpg")
             frame_index += 1
@@ -58,12 +60,12 @@ def moveFolder(dir, currDataFolder, outputDir, k):
     return (outputDir, subset, isCopied)
 
 def run(idx, dir, numMovies, currDataFolder, outputFolder, k):
-    print("running")
+    # print("running")
     if idx % 500 == 0:
         print(idx, numMovies)
 
     if os.path.isfile(dir):
-    	print("returning.", str(dir))
+    	# print("returning.", str(dir))
     	return
 
     outDir, sample, isCopied = moveFolder(dir, currDataFolder, outputFolder, k)
@@ -82,11 +84,16 @@ def main():
 
     #Parallel(n_jobs=8)(delayed(run)(idx, dir, numMovies, currDataFolder, outputFolder, k) for idx, dir in enumerate(dirs))
     movieOrder = []
+    numMovies = len(dirs)
     for idx, dir in enumerate(dirs):
-        isCopied = run(idx, dir, numMovies, currDataFolder, outputFolder, k)
-        if isCopied:
-            movieName = os.path.basename(dir)
-            movieOrder.append(movieName)
+        print(idx, "/", numMovies)
+        try:
+            isCopied = run(idx, dir, numMovies, currDataFolder, outputFolder, k)
+            if isCopied:
+                movieName = os.path.basename(dir)
+                movieOrder.append(movieName)
+        except:
+            print("failed on idx:", idx)
 
     # output order of movies
     print(movieOrder)

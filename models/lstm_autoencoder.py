@@ -200,7 +200,7 @@ def train_model(model, criterion, optimizer, num_epoches=25):
             for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
                 imgs = []
                 for j in range(i, i + batch_size):
-                    path = os.path.join('{}{}.jpg'.format('../data/all/data/v_i_frame_', j))
+                    path = os.path.join('{}{}.jpg'.format('../data/all/data/', j))
                     # img = Image.open(path)
                     img = data_transforms(Image.open(path))
                     imgs.append(img)
