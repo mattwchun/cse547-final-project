@@ -13,6 +13,8 @@ import os
 import time
 import copy
 from PIL import Image
+import matplotlib.pyplot as plt
+
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
 
@@ -199,14 +201,20 @@ def train_model(model, criterion, optimizer, num_epoches=25):
             # sequence input
             for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
                 imgs = []
+                imgRaws = []
                 for j in range(i, i + batch_size):
                     path = os.path.join('{}{}.jpg'.format('../data/all/data/', j))
-                    # img = Image.open(path)
-                    img = data_transforms(Image.open(path))
+                    imgRaw = Image.open(path)
+                    img = data_transforms(imgRaw)
                     imgs.append(img)
+                    imgRaws.append(imgRaw)
                 inputs = torch.stack(imgs)
             #for inputs, _, paths in data_loaders[phase]:
                 inputs = extractor.get_vec(inputs)
+
+                # close img's
+                for imgRaw in imgRaws:
+                    imgRaw.close()
 
                 inputs = inputs.reshape(-1, sequence_length, input_size).to(device)
 
@@ -278,4 +286,4 @@ plt.xlabel('iteration')
 plt.ylabel('loss')
 
 plt.grid(True)
-plt.show()
+plt.savefig('losses.png')
