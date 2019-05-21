@@ -14,10 +14,10 @@ class Img2Vec():
         #     self.model = torch.load(model_path) # because the model was trained on a cuda machine
         # else:
         #     self.model = torch.load(model_path, map_location='cpu')
-        self.model = models.resnet50(pretrained=True)
+        self.model = models.resnet18(pretrained=True)
 
         self.extraction_layer = self.model._modules.get('avgpool')
-        self.layer_output_size = 2048
+        self.layer_output_size = 512 #2048
 
         self.model = self.model.to(self.device)
         self.model.eval()

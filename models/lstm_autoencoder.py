@@ -12,7 +12,6 @@ import numpy as np
 import os
 import time
 import copy
-import matplotlib.pyplot as plt
 from PIL import Image
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
@@ -27,7 +26,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 sequence_length = 10
-input_size = 2048
+#input_size = 2048
+input_size = 512
 hidden_size = 32#64#1024
 num_layers = 2
 batch_size = sequence_length # set to the number of images of a seqence # 36
@@ -214,7 +214,7 @@ def train_model(model, criterion, optimizer, num_epoches=25):
 
                 with torch.set_grad_enabled(phase != 'val'):
                     outputs, embeddings = model(inputs)
-                    embeddingAsList = embeddings[0].detach().numpy()
+                    embeddingAsList = embeddings[0].cpu().detach().numpy()
                     if i == 0:
                         allEmbeddings = embeddingAsList
                     else:
