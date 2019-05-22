@@ -47,12 +47,15 @@ for baseline_feat_file in baseline_feat_files:
 
 # Helpers
 def cos_sim(vA, vB):
+    # print(vA, vB)
     aSquared = np.sqrt(np.dot(vA,vA))
     bSquared = np.sqrt(np.dot(vB,vB))
-    if aSquared == 0 or bSquared == 0:
-        return 0.0
+    result = 0.0
 
-    return np.dot(vA, vB) / (aSquared * bSquared)
+    if aSquared != 0 and bSquared != 0:
+        result = np.dot(vA, vB) / (aSquared * bSquared)
+
+    return result
 
 def getActualRankingOfMovies(ratingsForUserDF):
     sortedDF = ratingsForUserDF.sort_values(by=['rating', 'timestamp'], ascending=[False, True])
@@ -71,21 +74,24 @@ def optimal_movie_vec(k, currFeat, ratingsForUserDF):
     featureVecSize = len(currFeat[0])
     optimal_vec = np.zeros(featureVecSize)
     sumOfRatings = 0.0
+    currK = 0
     for index, row in ratingsForUserDF.iterrows():
-        if index < k:
+        if currK < k:
             currRating = row.rating
             currMovieId = row.movieId
             currFeatVecIdx = movieIdsToIdx[currMovieId]
             featVec = currFeat[currFeatVecIdx]
 
-            optimal_vec = np.add(optimal_vec, currRating * currFeatVecIdx)
+            optimal_vec = np.add(optimal_vec, currRating * featVec)
             sumOfRatings += currRating
+        currK += 1
 
     if sumOfRatings == 0:
         return np.zeros(featureVecSize)
 
     normalization = 1.0 / sumOfRatings
-    return normalization * optimal_vec
+    result = normalization * optimal_vec
+    return result
 
 def createScoreDataRow(currK, currFeatIdx, userId, ratingsForUserDF, predictedScores):
     # assumes predictedScores is in same order as movieIds appear in ratingsForUserDF
@@ -128,7 +134,7 @@ def eval():
 
                 # calculate scores for each movieId
                 scores = np.array([cos_sim(optimal_movie_vector, currFeat[featVecIdx]) for featVecIdx in featVecIdxs])
-                reverseSortedScoreIdxs = np.flip(np.argsort(scores))
+                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
 
                 # get reverse sorted feat vec idx sorted on score
                 reverseSortedFeatVecIdxs = featVecIdxs[reverseSortedScoreIdxs]
