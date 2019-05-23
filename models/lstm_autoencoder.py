@@ -202,13 +202,18 @@ def train_model(model, criterion, optimizer, num_epoches=25):
             for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
                 imgs = []
                 imgRaws = []
-                for j in range(i, i + batch_size):
-                    path = os.path.join('{}{}.jpg'.format('../data/all/data/', j))
-                    imgRaw = Image.open(path)
-                    img = data_transforms(imgRaw)
-                    imgs.append(img)
-                    imgRaws.append(imgRaw)
-                inputs = torch.stack(imgs)
+                try:
+                    for j in range(i, i + batch_size):
+                        path = os.path.join('{}{}.jpg'.format('../data/all/data/', j))
+                        imgRaw = Image.open(path)
+                        img = data_transforms(imgRaw)
+                        imgs.append(img)
+                        imgRaws.append(imgRaw)
+                    inputs = torch.stack(imgs)
+                except:
+                    for imgRaw in imgRaws:
+                        imgRaw.close()
+                    continue
             #for inputs, _, paths in data_loaders[phase]:
                 inputs = extractor.get_vec(inputs)
 
@@ -247,9 +252,8 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
 
-            if epoch == num_epoches - 1:
                 # output only the last
-                np.savetxt("embeddings.csv", allEmbeddings, delimiter=",")
+            np.savetxt("embeddings%d.csv" % epoch, allEmbeddings, delimiter=",")
 
 
 
