@@ -183,26 +183,26 @@ def train_model(model, criterion, optimizer, num_epoches=25):
     best_loss = 100
 
     for epoch in range(num_epoches):
-        print('Epoch {} / {}'.format(epoch + 1, num_epoches))
-        print('-' * 10)
+        try:
+            print('Epoch {} / {}'.format(epoch + 1, num_epoches))
+            print('-' * 10)
 
-        #for phase in ['train', 'val']:
-        for phase in ['all']:
-            if phase == 'val':
-                # scheduler.step()
-                model.eval()
-            else:
-                model.train()
+            #for phase in ['train', 'val']:
+            for phase in ['all']:
+                if phase == 'val':
+                    # scheduler.step()
+                    model.eval()
+                else:
+                    model.train()
 
-            running_loss = 0.0
+                running_loss = 0.0
 
-            allEmbeddings = np.array([])
+                allEmbeddings = np.array([])
 
-            # sequence input
-            for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
-                imgs = []
-                imgRaws = []
-                try:
+                # sequence input
+                for i in range(0, dataset_sizes['all'] - batch_size + 1, batch_size):
+                    imgs = []
+                    imgRaws = []
                     for j in range(i, i + batch_size):
                         path = os.path.join('{}{}.jpg'.format('../data/all/data/', j))
                         imgRaw = Image.open(path)
@@ -210,51 +210,48 @@ def train_model(model, criterion, optimizer, num_epoches=25):
                         imgs.append(img)
                         imgRaws.append(imgRaw)
                     inputs = torch.stack(imgs)
-                except:
+                #for inputs, _, paths in data_loaders[phase]:
+                    inputs = extractor.get_vec(inputs)
+
+                    # close img's
                     for imgRaw in imgRaws:
                         imgRaw.close()
-                    continue
-            #for inputs, _, paths in data_loaders[phase]:
-                inputs = extractor.get_vec(inputs)
 
-                # close img's
-                for imgRaw in imgRaws:
-                    imgRaw.close()
+                    inputs = inputs.reshape(-1, sequence_length, input_size).to(device)
 
-                inputs = inputs.reshape(-1, sequence_length, input_size).to(device)
+                    optimizer.zero_grad()
 
-                optimizer.zero_grad()
+                    with torch.set_grad_enabled(phase != 'val'):
+                        outputs, embeddings = model(inputs)
+                        embeddingAsList = embeddings[0].cpu().detach().numpy()
+                        if i == 0:
+                            allEmbeddings = embeddingAsList
+                        else:
+                            allEmbeddings = np.vstack((allEmbeddings, embeddingAsList))
 
-                with torch.set_grad_enabled(phase != 'val'):
-                    outputs, embeddings = model(inputs)
-                    embeddingAsList = embeddings[0].cpu().detach().numpy()
-                    if i == 0:
-                        allEmbeddings = embeddingAsList
-                    else:
-                        allEmbeddings = np.vstack((allEmbeddings, embeddingAsList))
+                        inv_idx = torch.arange(sequence_length - 1, -1, -1).long()
+                        loss = criterion(outputs, inputs[:, inv_idx, :])
 
-                    inv_idx = torch.arange(sequence_length - 1, -1, -1).long()
-                    loss = criterion(outputs, inputs[:, inv_idx, :])
+                        if phase != 'val':
+                            loss.backward()
+                            optimizer.step()
 
-                    if phase != 'val':
-                        loss.backward()
-                        optimizer.step()
+                    running_loss += loss.item() * inputs.size(0)
 
-                running_loss += loss.item() * inputs.size(0)
+                epoch_loss = running_loss / dataset_sizes[phase]
 
-            epoch_loss = running_loss / dataset_sizes[phase]
+                losses[phase].append(epoch_loss)
 
-            losses[phase].append(epoch_loss)
+                #print('{} Loss: {:4f}'.format(phase, epoch_loss))
 
-            #print('{} Loss: {:4f}'.format(phase, epoch_loss))
+                if phase == 'val' and epoch_loss < best_loss:
+                    best_loss = epoch_loss
+                    best_model_wts = copy.deepcopy(model.state_dict())
 
-            if phase == 'val' and epoch_loss < best_loss:
-                best_loss = epoch_loss
-                best_model_wts = copy.deepcopy(model.state_dict())
-
-                # output only the last
-            np.savetxt("embeddings%d.csv" % epoch, allEmbeddings, delimiter=",")
-
+                    # output only the last
+                np.savetxt("embeddings%d.csv" % epoch, allEmbeddings, delimiter=",")
+        except:
+            print("failed on epoch =", epoch)
 
 
     time_elapsed = time.time() - since
