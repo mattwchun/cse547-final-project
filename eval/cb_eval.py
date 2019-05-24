@@ -102,16 +102,47 @@ def createScoreDataRow(currK, currFeatIdx, userId, ratingsForUserDF, predictedSc
         idx += 1
     return result
 
+def calcILS(currFeat, reverseSortedIdxs):
+    n = len(reverseSortedIdxs)
+    total = 0.0
+    for i in range(n - 1):
+        idx1 = reverseSortedIdxs[i]
+        feat1 = currFeat[idx1]
+        for j in range(i, n):
+            idx2 = reverseSortedIdxs[j]
+            feat2 = currFeat[idx2]
+            total += cos_sim(feat1, feat2)
+    return total / 2.0
+
+
 def outputData(data, outputFilename):
     with open(outputFilename, "w") as f:
         writer = csv.writer(f)
         writer.writerows(data)
 
+def runEvalRMSE():
+    data, scoresData = evalRMSE()
+
+    # output RMSE data
+    outputData(data, 'rmseData.csv')
+
+    # output scores data
+    outputData(scoresData, 'scoresData.csv')
+
+def runEvalILS():
+    avgILSData, ilsData = evalDiversity()
+
+    # output avgILS data
+    outputData(avgILSData, 'avgILSData.csv')
+
+    # output ILS data
+    outputData(ilsData, 'ilsData.csv')
+
 # In[ ]:
 
 
 # eval
-def eval():
+def evalRMSE():
     print(("currK", "currFeatIdx"))
     data = [] # [k, userId, currFeatIdx, RMSE]
     scoresData = [] # [k, currFeatIdx, userId, movieId, predicted rating, actual rating]
@@ -154,19 +185,51 @@ def eval():
             print((currK, currFeatIdx), "avgRMSE =", avgRMSE)
     return (data, scoresData)
 
+# finds top 20 movies and calculates the diversity within those top 20 movies
+def evalDiversity(topNMovies = 20):
+    avgILSData = [] # [k, currFeatIdx, avgILS]
+    ilsData = [] # [k, currFeatIdx, userId, ILS]
+    for currFeatIdx, currFeat in enumerate(feats):
+        for currKMinus1 in range(k):
+            currK = currKMinus1 + 1
+            totalILSUsers = 0.0
+            for currUserId in allUserIds:
+                # data frame with only userId = currUserId
+                ratingsForUser = ratings[ratings.userId == currUserId]
 
+                # calculate optimal movie vec for currUserId
+                optimal_movie_vector = optimal_movie_vec(currK, currFeat, ratingsForUser)
+
+                # get scores for all movies
+                scores = np.array([cos_sim(optimal_movie_vector, movieIdsToIdx[movieId]) for movieId in idxToMovieIds])
+
+                # sort
+                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
+                topNMoviesSortedScoreIdxs = reverseSortedScoreIdxs[:topNMovies]
+
+                # get sorted order of movieIds
+                reverseSortedMovieIds = [idxToMovieIds[idx] for idx in topNMoviesSortedScoreIdxs]
+
+                # get sorted idx of indexes of feat vector
+                reverseSortedIdxs = [movieIdsToIdx[movieId] for movieId in reverseSortedMovieIds]
+
+                currUserILS = calcILS(currFeat, reverseSortedIdxs)
+
+                totalILSUsers += currUserILS
+
+                ilsData.append([currK, currFeatIdx, currUserId, currUserILS])
+
+            currAvgILS = 1.0 * totalILSUsers / len(allUserIds)
+
+            avgILSData.append([currK, currFeatIdx, currAvgILS])
+
+    return (avgILSData, ilsData)
 
 # In[ ]:
 
 
 def main():
-    data, scoresData = eval()
-
-    # output RMSE data
-    outputData(data, 'rmseData.csv')
-
-    # output scores data
-    outputData(scoresData, 'scoresData.csv')
+    runEvalILS()
 
 # In[ ]:
 
