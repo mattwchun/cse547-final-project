@@ -201,7 +201,7 @@ def evalDiversity(topNMovies = 20):
                 optimal_movie_vector = optimal_movie_vec(currK, currFeat, ratingsForUser)
 
                 # get scores for all movies
-                scores = np.array([cos_sim(optimal_movie_vector, movieIdsToIdx[movieId]) for movieId in idxToMovieIds])
+                scores = np.array([cos_sim(optimal_movie_vector, currFeat[movieIdsToIdx[movieId]]) for movieId in idxToMovieIds])
 
                 # sort
                 reverseSortedScoreIdxs = np.argsort(scores)[::-1]
@@ -221,7 +221,9 @@ def evalDiversity(topNMovies = 20):
 
             currAvgILS = 1.0 * totalILSUsers / len(allUserIds)
 
-            avgILSData.append([currK, currFeatIdx, currAvgILS])
+            currILSDataElement = [currK, currFeatIdx, currAvgILS]
+            print(currILSDataElement)
+            avgILSData.append(currILSDataElement)
 
     return (avgILSData, ilsData)
 
