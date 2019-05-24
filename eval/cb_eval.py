@@ -1,51 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import numpy as np
 import pandas as pd
 import csv
-
-
-# In[2]:
-
 
 # parameters
 k = 20
 
 
-# In[3]:
-
-
-# load data
-ratings = pd.read_csv("../data/first20Ratings.csv")
-ratings.timestamp = pd.to_datetime(ratings.timestamp, infer_datetime_format=True)
-allUserIds = np.genfromtxt('../data/validUsers.csv', delimiter=',') # users we care about
-movies = pd.read_csv('../data/movie.csv')
-idxToMovieIds = movies.movieId.tolist() # gives the mapping from index of feature_vector_top_k.npy to movieId
-movieIdsToIdx = dict()
-for idx, movieId in enumerate(idxToMovieIds):
-    movieIdsToIdx[movieId] = idx
-
-baseline_feat_files = ['../feature vector construction/feature vectors/feature_vector_top_5.npy',
-                      '../feature vector construction/feature vectors/feature_vector_top_10.npy',
-                      '../feature vector construction/feature vectors/feature_vector_top_15.npy',
-                      '../feature vector construction/feature vectors/feature_vector_top_30.npy',
-                      '../feature vector construction/feature vectors/feature_vector_top_50.npy',
-                      '../feature vector construction/feature vectors/feature_vector_top_100.npy']
-# baseline_feat_files = baseline_feat_files[:1] # test first case
-feats = []
-for baseline_feat_file in baseline_feat_files:
-    currFeat = np.load(baseline_feat_file)
-    feats.append(currFeat)
-
-
-# In[4]:
-
-
 # Helpers
+# returns numpy array of the same size as baseline vector matrices but where dont have data for movie is a vector of all -1's
+def generateFeatVecMatrixFromEmbedding(embeddings, allMovieIds, movieIdToEmbeddingIdx):
+    result = []
+    dimensions = len(embeddings[0])
+    for movieId in allMovieIds:
+        if movieId in movieIdToEmbeddingIdx:
+            idxOfEmbedding = movieIdToEmbeddingIdx[movieId]
+            result.append(embeddings[idxOfEmbedding])
+        else:
+            result.append([-1.0] * dimensions)
+    return np.array(result)
+
+
 def cos_sim(vA, vB):
     # print(vA, vB)
     aSquared = np.sqrt(np.dot(vA,vA))
@@ -121,13 +98,16 @@ def outputData(data, outputFilename):
         writer.writerows(data)
 
 def runEvalRMSE():
-    data, scoresData = evalRMSE()
+    data, scoresData, avgRMSEData = evalRMSE()
 
     # output RMSE data
     outputData(data, 'rmseData.csv')
 
     # output scores data
     outputData(scoresData, 'scoresData.csv')
+
+    # output avgRMSE data
+    outputData(avgRMSEData, 'avgRMSEData.csv')
 
 def runEvalILS():
     avgILSData, ilsData = evalDiversity()
@@ -138,13 +118,38 @@ def runEvalILS():
     # output ILS data
     outputData(ilsData, 'ilsData.csv')
 
-# In[ ]:
+
+# load data
+ratings = pd.read_csv("../data/first20Ratings.csv")
+ratings.timestamp = pd.to_datetime(ratings.timestamp, infer_datetime_format=True)
+allUserIds = np.genfromtxt('../data/validUsers.csv', delimiter=',') # users we care about
+movies = pd.read_csv('../data/movie.csv')
+idxToMovieIds = movies.movieId.tolist() # gives the mapping from index of feature_vector_top_k.npy to movieId
+movieIdsToIdx = dict()
+for idx, movieId in enumerate(idxToMovieIds):
+    movieIdsToIdx[movieId] = idx
+
+baseline_feat_files = ['../feature vector construction/feature vectors/feature_vector_top_5.npy',
+                      '../feature vector construction/feature vectors/feature_vector_top_10.npy',
+                      '../feature vector construction/feature vectors/feature_vector_top_15.npy',
+                      '../feature vector construction/feature vectors/feature_vector_top_30.npy',
+                      '../feature vector construction/feature vectors/feature_vector_top_50.npy',
+                      '../feature vector construction/feature vectors/feature_vector_top_100.npy']
+
+autoencoder_feat_files = ['../feature vector construction/feature vectors/autoencoder_feat_vec_32_dim.npy']
+# baseline_feat_files = baseline_feat_files[:1] # test first case
+feats = []
+for feat_file in baseline_feat_files + autoencoder_feat_files:
+    currFeat = np.load(feat_file)
+    feats.append(currFeat)
 
 
 # eval
 def evalRMSE():
+    print("evalRMSE()")
     print(("currK", "currFeatIdx"))
     data = [] # [k, userId, currFeatIdx, RMSE]
+    avgRMSEData = [] # [k, currFeatIdx, avgRMSE]
     scoresData = [] # [k, currFeatIdx, userId, movieId, predicted rating, actual rating]
     for currFeatIdx, currFeat in enumerate(feats):
         for currKMinus1 in range(k):
@@ -182,11 +187,15 @@ def evalRMSE():
                 scoresData += createScoreDataRow(currK, currFeatIdx, currUserId, ratingsForUser, scores)
 
             avgRMSE = totalRMSEUsers / len(allUserIds)
-            print((currK, currFeatIdx), "avgRMSE =", avgRMSE)
-    return (data, scoresData)
+
+            currAvgRMSEDataRow = [currK, currFeatIdx, avgRMSE]
+            print(currAvgRMSEDataRow)
+            avgRMSEData.append(currAvgRMSEDataRow)
+    return (data, scoresData, avgRMSEData)
 
 # finds top 20 movies and calculates the diversity within those top 20 movies
 def evalDiversity(topNMovies = 20):
+    print("evalDiversity(topNMovies = 20)")
     avgILSData = [] # [k, currFeatIdx, avgILS]
     ilsData = [] # [k, currFeatIdx, userId, ILS]
     for currFeatIdx, currFeat in enumerate(feats):
@@ -231,6 +240,7 @@ def evalDiversity(topNMovies = 20):
 
 
 def main():
+    runEvalRMSE()
     runEvalILS()
 
 # In[ ]:
