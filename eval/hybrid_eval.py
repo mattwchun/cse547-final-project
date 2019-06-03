@@ -3,10 +3,30 @@ import numpy as np
 import pandas as pd
 import csv
 
+
 # parameters
 
 
 # load data
+
+# make test data
+np.random.seed(1)
+
+inputData = np.random.randint(0, 10,(20, 8))
+inputData = np.rint(inputData)
+np.set_printoptions(precision=1)
+np.set_printoptions(suppress=True)
+
+inputDF = pd.DataFrame(inputData)
+
+print("HI")
+print(inputData)
+print("HY")
+
+print(inputDF)
+
+inputDF[0] = [i for i in range(0,20)]
+print(inputDF)
 
 
 def accuracy(RMSE):
@@ -22,7 +42,7 @@ def accuracy(RMSE):
 
             totalRMSE += currRMSE
             avgRMSE = totalRMSE / len(allUsers)
-            saveToOutputFile([k, modelIdx, avgRMSE])
+            print([k, modelIdx, avgRMSE])
 
 
 
@@ -39,15 +59,19 @@ def calcRMSE(reverseSortedMovieIds, actualRankingOfMovies):
 
 
 def sortActualRating(user, k, modelIdx):
+    print()
 
 
 
 def sortHybridRating(user, k , modelIdx):
-    def outputData(data, outputFilename):
-        with open(outputFilename, "w") as f:
-            writer = csv.writer(f)
-            writer.writerows(data)
+    print()
+
+def outputData(data, outputFilename):
+    with open(outputFilename, "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(data)
 
 
 def main():
     #runEvalRMSE()
+    print()
