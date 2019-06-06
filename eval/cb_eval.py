@@ -137,7 +137,7 @@ baseline_feat_files = ['../feature vector construction/feature vectors/feature_v
                       '../feature vector construction/feature vectors/feature_vector_top_100.npy']
 
 autoencoder_feat_files = ['../feature vector construction/feature vectors/autoencoder_feat_vec_32_dim.npy',
-                            '../feature vector construction/feature vectors/autoencoder_feat_vec_32_dim.npy']
+                            '../feature vector construction/feature vectors/autoencoder_feat_vec_128_dim.npy']
 # baseline_feat_files = baseline_feat_files[:1] # test first case
 feats = []
 # for feat_file in baseline_feat_files + autoencoder_feat_files:
