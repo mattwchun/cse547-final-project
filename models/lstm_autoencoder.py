@@ -30,7 +30,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 sequence_length = 10
 #input_size = 2048
 input_size = 512
-hidden_size = 32#64#1024
+hidden_size = 128#32#64#1024
 num_layers = 2
 batch_size = sequence_length # set to the number of images of a seqence # 36
 num_epoches = 100#250
@@ -130,25 +130,6 @@ class ImageFolderWithPaths(datasets.ImageFolder):
         return tuple_with_path
 
 
-
-# In[28]:
-
-
-'''
-data_dir = './pregnant'
-
-data_transforms = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
-                                          transform=data_transforms) for x in ['train', 'val']}
-data_loaders = {x: torch.utils.data.DataLoader(image_datasets[x],
-                                               batch_size=batch_size, shuffle=False) for x in ['train', 'val']}
-dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
-'''
-# data_dir = './pregnant'
 data_dir = '../data'
 
 data_transforms = transforms.Compose([
@@ -181,6 +162,8 @@ def train_model(model, criterion, optimizer, num_epoches=25):
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 100
+
+    allInputs = []
 
     for epoch in range(num_epoches):
         try:
