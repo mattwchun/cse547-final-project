@@ -1,4 +1,4 @@
-# cse547-final-project
+# Alleviating Movie Cold Start Recommendations with Deep Spatial and Temporal Features
 
 item-item.py generates gamma matrix where each row represents a uer and each column represents a movie each element is the predicted rating of the movie from the user 
 
