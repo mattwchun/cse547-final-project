@@ -172,8 +172,7 @@ def evalRMSE():
 
                 # calculate scores for each movieId
                 scores = np.array([cos_sim(optimal_movie_vector, currFeat[featVecIdx]) for featVecIdx in featVecIdxs])
-                # reverseSortedScoreIdxs = np.argsort(scores)[::-1]
-                reverseSortedScoreIdxs = np.argsort(scores)
+                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
 
                 # get reverse sorted feat vec idx sorted on score
                 reverseSortedFeatVecIdxs = featVecIdxs[reverseSortedScoreIdxs]
@@ -217,8 +216,7 @@ def evalDiversity(topNMovies = 20):
                 scores = np.array([cos_sim(optimal_movie_vector, currFeat[movieIdsToIdx[movieId]]) for movieId in idxToMovieIds])
 
                 # sort
-                # reverseSortedScoreIdxs = np.argsort(scores)[::-1]
-                reverseSortedScoreIdxs = np.argsort(scores)
+                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
                 topNMoviesSortedScoreIdxs = reverseSortedScoreIdxs[:topNMovies]
 
                 # get sorted order of movieIds
@@ -245,7 +243,7 @@ def evalDiversity(topNMovies = 20):
 
 
 def main():
-    #runEvalRMSE()
+    runEvalRMSE()
     runEvalILS()
 
 # In[ ]:
