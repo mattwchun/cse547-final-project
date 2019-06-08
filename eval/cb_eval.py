@@ -140,8 +140,8 @@ autoencoder_feat_files = ['../feature vector construction/feature vectors/autoen
                             '../feature vector construction/feature vectors/autoencoder_feat_vec_128_dim.npy']
 # baseline_feat_files = baseline_feat_files[:1] # test first case
 feats = []
-# for feat_file in baseline_feat_files + autoencoder_feat_files:
-for feat_file in [autoencoder_feat_files[1]]: # run just the new autoencoder
+for feat_file in baseline_feat_files + autoencoder_feat_files:
+# for feat_file in [autoencoder_feat_files[1]]: # run just the new autoencoder
     currFeat = np.load(feat_file)
     feats.append(currFeat)
 
@@ -172,7 +172,8 @@ def evalRMSE():
 
                 # calculate scores for each movieId
                 scores = np.array([cos_sim(optimal_movie_vector, currFeat[featVecIdx]) for featVecIdx in featVecIdxs])
-                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
+                # reverseSortedScoreIdxs = np.argsort(scores)[::-1]
+                reverseSortedScoreIdxs = np.argsort(scores)
 
                 # get reverse sorted feat vec idx sorted on score
                 reverseSortedFeatVecIdxs = featVecIdxs[reverseSortedScoreIdxs]
@@ -203,6 +204,7 @@ def evalDiversity(topNMovies = 20):
     for currFeatIdx, currFeat in enumerate(feats):
         for currKMinus1 in range(k):
             currK = currKMinus1 + 1
+            print("working on:", currK)
             totalILSUsers = 0.0
             for currUserId in allUserIds:
                 # data frame with only userId = currUserId
@@ -215,7 +217,8 @@ def evalDiversity(topNMovies = 20):
                 scores = np.array([cos_sim(optimal_movie_vector, currFeat[movieIdsToIdx[movieId]]) for movieId in idxToMovieIds])
 
                 # sort
-                reverseSortedScoreIdxs = np.argsort(scores)[::-1]
+                # reverseSortedScoreIdxs = np.argsort(scores)[::-1]
+                reverseSortedScoreIdxs = np.argsort(scores)
                 topNMoviesSortedScoreIdxs = reverseSortedScoreIdxs[:topNMovies]
 
                 # get sorted order of movieIds
@@ -242,7 +245,7 @@ def evalDiversity(topNMovies = 20):
 
 
 def main():
-    runEvalRMSE()
+    #runEvalRMSE()
     runEvalILS()
 
 # In[ ]:
